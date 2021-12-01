@@ -1,12 +1,25 @@
 version: '3'
 services:
+  daemon:
+    image: newrelic/php-daemon
   phpcli:
-    build: docker/phpcli
+    build:
+      context: docker/phpcli
+      args:
+        NEW_RELIC_AGENT_VERSION: "9.18.1.303"
+        NEW_RELIC_LICENSE_KEY: ${NR_LICENSE_KEY}
+        NEW_RELIC_APPNAME: "PHP CLI TEST"
+        NEW_RELIC_DAEMON_ADDRESS: "daemon:31339"
     tty: true
     command: sh
     working_dir: /var/www/html
+    ports:
+      - 88:80
     volumes:
       - ./:/var/www/html
+    environment:
+      SALESFORCE_WEBHOOK_URL: 'https://enqenvd19l4f3a8.m.pipedream.net'
+      SPRYKER_PROJECT_NAME: 'aldi-us-prod'
   broker:
     image: 'rabbitmq:3.7.14-management-alpine'
     ports:
@@ -16,15 +29,32 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBIT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD}
   nri:
-    build:
-      context: docker/nri
+#    build:
+#      context: docker/nri
+    image: spryker/newrelic-rabbitmq-agent
     tty: true
     environment:
       NR_LICENSE_KEY: ${NR_LICENSE_KEY}
       RABBITMQ_ENDPOINT: broker
       RABBITMQ_PORT: 15672
-      RABBITMQ_USE_SSL:  'false'
+      # RABBITMQ_USE_SSL:  true
       RABBITMQ_USERNAME: ${RABBIT_USER}
       RABBITMQ_PASSWORD:  ${RABBIT_PASSWORD}
       QUEUES_REGEXES: '["^import\."]'
       EXCHANGES_REGEXES: '["^import\."]'
+      RABBITMQ_INTEGRATIONS_INTERVAL: 15
+#  nri:
+#    #    build:
+#    #      context: docker/nri
+#    image: spryker/newrelic-rabbitmq-agent
+#    tty: true
+#    environment:
+#      - NR_LICENSE_KEY=${NR_LICENSE_KEY}
+#      - RABBITMQ_ENDPOINT=rabbitmq.us.dev.commerce.ci-aldi.com
+#      - RABBITMQ_PORT=15672
+#      - RABBITMQ_USE_SSL=${SSL}
+#      - RABBITMQ_USERNAME=${RABBIT_USER}
+#      - RABBITMQ_PASSWORD=${RABBIT_PASSWORD}
+#      - QUEUES_REGEXES='["^import\."]'
+#      - EXCHANGES_REGEXES='["^import\."]'
+#      - RABBITMQ_INTEGRATIONS_INTERVAL=15
